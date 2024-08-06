@@ -1,27 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import useAxiosPublic from "../hooks/useAxiosPublic";
 
-const users = [
-  {
-    id: 1,
-    name: "Rakib",
-    email: "rakib@gmail.com",
-  },
-  {
-    id: 2,
-    name: "sakib",
-    email: "sakib@gmail.com",
-  },
-  {
-    id: 3,
-    name: "faysal",
-    email: "faysal@gmail.com",
-  },
-];
-
-// function UserList({ users, onDelete, onEdit }) {
 function UserList() {
   const [nameError, setNameError] = useState("");
   const [openUserModal, setOpenUserModal] = useState(false);
+  const [user, setUser] = useState([]);
+  const [error, setError] = useState("");
+  const axiosPublic = useAxiosPublic();
+
+  useEffect(() => {
+    axiosPublic
+      .get("/users")
+      .then((res) => setUser(res?.data))
+      .catch((error) => setError(error));
+  }, []);
 
   const handleCreateUser = (e) => {
     e.preventDefault();
@@ -33,8 +25,6 @@ function UserList() {
     if (userName.length < 3) {
       return setNameError("Name must be 3 characters");
     }
-
-    console.log({ userName, userEmail });
 
     setTimeout(() => {
       return setOpenUserModal(false);
@@ -68,7 +58,7 @@ function UserList() {
           </tr>
         </thead>
         <tbody>
-          {users.map((user, index) => (
+          {user.map((user, index) => (
             <tr key={index} className='tbody_row'>
               <td className='tbody_data'>{index + 1}</td>
               <td className='tbody_data'>{user?.name}</td>
@@ -116,23 +106,30 @@ function UserList() {
         </div>
       )}
 
-{/* up */}
-      <div className='create_user'>
-        <div className='create_user_heading'>
-          <h2>Create a new user</h2>
-          <div onClick={handleCloseUserModal} className='close_user_modal'>
-            Close
+      {/* update user info */}
+      {false && (
+        <div className='create_user'>
+          <div className='create_user_heading'>
+            <h2>Update the user</h2>
+            <div onClick={handleCloseUserModal} className='close_user_modal'>
+              Close
+            </div>
           </div>
+          <form onSubmit={handleCreateUser} className='user_form'>
+            <input type='text' name='name' placeholder='Enter name' required />
+            <p className='error'>{nameError}</p>
+            <input
+              type='email'
+              name='email'
+              placeholder='Enter email'
+              required
+            />
+            <button type='submit' className='btn submit_btn'>
+              Update
+            </button>
+          </form>
         </div>
-        <form onSubmit={handleCreateUser} className='user_form'>
-          <input type='text' name='name' placeholder='Enter name' required />
-          <p className='error'>{nameError}</p>
-          <input type='email' name='email' placeholder='Enter email' required />
-          <button type='submit' className='btn submit_btn'>
-            Submit
-          </button>
-        </form>
-      </div>
+      )}
     </div>
   );
 }
