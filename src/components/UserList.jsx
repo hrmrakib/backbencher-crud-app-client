@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useAxiosPublic from "../hooks/useAxiosPublic";
+import Swal from "sweetalert2";
+import toast, { Toaster } from "react-hot-toast";
 
 function UserList() {
   const [nameError, setNameError] = useState("");
@@ -7,13 +9,7 @@ function UserList() {
   const [user, setUser] = useState([]);
   const [error, setError] = useState("");
   const axiosPublic = useAxiosPublic();
-
-  useEffect(() => {
-    axiosPublic
-      .get("/users")
-      .then((res) => setUser(res?.data))
-      .catch((error) => setError(error));
-  }, []);
+  // const notify = (msg) => toast(msg);
 
   const handleCreateUser = (e) => {
     e.preventDefault();
@@ -26,12 +22,59 @@ function UserList() {
       return setNameError("Name must be 3 characters");
     }
 
+    axiosPublic
+      .post("/create", { userName, userEmail })
+      .then((res) => {
+        console.log(res.data?.isExist);
+        if (res.data?.isExist) {
+          return toast.error("Email already exist!");
+        }
+        if (res.data.message === "success") {
+          Swal.fire({
+            position: "top-end",
+            icon: "success",
+            title: `${userName} is an user now!`,
+            showConfirmButton: false,
+            timer: 1500,
+          });
+        }
+      })
+      .catch((err) => {});
+
     setTimeout(() => {
       return setOpenUserModal(false);
     }, 999);
   };
 
-  const handleDelete = () => {};
+  const handleDelete = (email) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axiosPublic.delete(`/delete/${email}`).then((res) => {
+          console.log(res.data);
+        });
+        // Swal.fire({
+        //   title: "Deleted!",
+        //   text: "Your file has been deleted.",
+        //   icon: "success",
+        // });
+      }
+    });
+  };
+
+  useEffect(() => {
+    axiosPublic
+      .get("/users")
+      .then((res) => setUser(res?.data))
+      .catch((error) => setError(error));
+  }, [handleCreateUser]);
 
   const handleOpenUserModal = () => {
     return setOpenUserModal(true);
@@ -42,6 +85,7 @@ function UserList() {
 
   return (
     <div className='table_container'>
+      <Toaster position='top-center' reverseOrder={false} />
       <div className='header_box'>
         <h2 className='container_heading'>Users Information</h2>
         <button onClick={handleOpenUserModal} className='btn'>
@@ -69,7 +113,7 @@ function UserList() {
                   <button className='btn update_button'>Update</button>
 
                   <button
-                    onClick={() => handleDelete(user)}
+                    onClick={() => handleDelete(user?.email)}
                     className='btn delete_button'
                   >
                     Delete
